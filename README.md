@@ -32,6 +32,7 @@ Rather than committing to a single optimization strategy, InfeGo is designed to 
 
 1. [Optimizing Inference in Transformer-Based Models](https://arxiv.org/pdf/2509.17894v1) — Research on techniques for improving inference efficiency in Transformer-based models.
 2. [Inference Engineering](https://inference-engineering.com/index.html) — Technical reference for inference engineering concepts and practices.
+3. [UZU : A high-performance inference engine for AI models.](https://github.com/trymirai/uzu)
 
 ## Vision
 
