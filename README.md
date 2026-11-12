@@ -1,144 +1,202 @@
 # InferGo
 
-**An inference optimization layer for vLLM.**
+### Hide inference optimization complexity. Let developers focus on building.
 
-InferGo aims to help developers get more performance from the hardware they already have. The project starts with systematic experimentation, then turns validated findings into practical optimization automation.
+InferGo is an intelligent inference optimization layer designed to make
+AI model serving simpler, faster, and more cost-efficient.
 
-> Measure first. Understand the workload. Validate improvements. Automate what works.
+Developers should not need to become inference infrastructure experts
+just to ship AI-powered applications. InferGo aims to take care of the
+complexity behind inference optimization so teams can focus on building
+products.
+
+> **You build AI applications. InferGo takes care of inference
+> optimization.**
+
+------------------------------------------------------------------------
+
+## The problem
+
+Running models in production is more than choosing a model and calling
+an API. Getting the right balance between latency, throughput, memory
+usage, and cost can require substantial specialized work.
+
+Teams may need to evaluate and combine techniques such as:
+
+-   KV Caching
+-   Quantization and low-precision execution
+-   Batching and caching
+-   Low-rank and other model-compression techniques
+-   Speculative or other accelerated decoding methods
+-   Runtime and serving-configuration tuning
+-   Hardware-aware optimization
+
+These techniques can deliver meaningful improvements, but they also
+introduce complexity. The best choice depends on the model, workload,
+hardware, quality requirements, and serving environment.
+
+**InferGo's goal is to make that complexity easier to manage.**
+
+## The vision
+
+InferGo aims to provide a smart layer between AI applications and
+inference infrastructure.
+
+Instead of requiring developers to manually investigate, select,
+configure, and maintain every optimization, InferGo will help identify
+suitable strategies and make them easier to evaluate and apply.
+
+The intended experience:
+
+1.  **Connect** an existing model and inference setup.
+2.  **Understand** the workload and its performance requirements.
+3.  **Evaluate** relevant optimization opportunities.
+4.  **Apply** suitable optimizations through a consistent workflow.
+5.  **Measure** the impact on latency, throughput, resource usage, and
+    cost.
+
+The long-term objective is to make inference optimization an
+increasingly seamless part of developing and deploying AI applications.
+
+## Design principles
+
+-   **Developer-first:** Keep the developer experience simple; expose
+    complexity only when it is useful.
+-   **Evidence-driven:** Measure optimizations against a baseline rather
+    than assuming they help.
+-   **Workload-aware:** Select strategies based on the model, hardware,
+    traffic pattern, and quality constraints.
+-   **Composable:** Make it possible to adopt individual capabilities
+    without committing to an all-or-nothing stack.
+-   **Transparent:** Make performance changes and trade-offs observable.
+-   **Practical:** Prioritize improvements that matter in real
+    production workloads.
+
+## What InferGo is intended to optimize
+
+The project is exploring an extensible set of inference optimization
+capabilities, including:
+
+  -----------------------------------------------------------------------
+  Area                                Objective
+  ----------------------------------- -----------------------------------
+  Model and strategy selection        Find an appropriate serving
+                                      strategy for a workload
+
+  Quantization                        Reduce memory and compute
+                                      requirements where quality permits
+
+  Low-rank optimization               Explore lower-cost computation for
+                                      suitable model components
+
+  Batching and caching                Improve serving efficiency under
+                                      relevant traffic patterns
+
+  Runtime configuration               Tune execution settings for the
+                                      target environment
+
+  Performance evaluation              Compare latency, throughput,
+                                      memory, and quality against a
+                                      baseline
+  -----------------------------------------------------------------------
+
+These are areas of exploration, not a claim that every capability is
+currently implemented.
+
+## How it fits into an inference stack
+
+At a high level, the intended flow is:
+
+``` text
+              AI application
+                    |
+                    v
+                 InferGo
+       +---------------------------+
+       | Workload understanding   |
+       | Optimization strategies  |
+       | Evaluation and selection |
+       | Performance measurement |
+       +---------------------------+
+                    |
+                    v
+          Inference runtime
+                    |
+                    v
+               Model + GPU
+```
+
+InferGo is intended to complement inference runtimes and serving
+systems, not force developers to replace their existing infrastructure.
+The integration approach and supported runtimes will be defined as the
+project develops.
+
+## Project status
+
+**InferGo is under active development.**
+
+The current focus is to establish a practical foundation, validate
+optimization strategies with reproducible benchmarks, and learn from
+developers operating real inference workloads.
+
+Interfaces, supported runtimes, and feature availability may change as
+the project evolves. Check the repository's releases and documentation
+for the current implementation status.
 
 ## Roadmap
 
-| Phase | Focus | Deliverables |
-|---|---|---|
-| **1. Experimentation** | Benchmark vLLM across different workloads and supported optimization techniques | Research articles, optimization cheat sheet, reproducible benchmark repository |
-| **2. Automation** | Turn repeatable analysis and validated recommendations into tools | Profiler, bottleneck analysis, configuration advisor, automated experiments |
+The roadmap is intentionally iterative:
 
----
+-   [ ] Establish a reproducible inference benchmarking baseline
+-   [ ] Define the core optimization and evaluation interfaces
+-   [ ] Build an initial end-to-end optimization proof of concept
+-   [ ] Integrate with an initial inference runtime
+-   [ ] Evaluate optimization strategies on representative workloads
+-   [ ] Add workload-aware strategy selection
+-   [ ] Expand runtime and optimization support
+-   [ ] Improve observability and production-readiness
 
-## Phase 1 — Experimentation
+Roadmap items are goals, not delivery commitments.
 
-**Goal:** Understand how workload characteristics and vLLM optimization techniques affect inference performance.
+## Who is InferGo for?
 
-### What to test
+InferGo is being developed with the following users in mind:
 
-| Dimension | Examples |
-|---|---|
-| Workloads | Short requests, long context, generation-heavy, mixed, bursty |
-| Request patterns | Input/output lengths, concurrency, arrival rate, prefix reuse |
-| Optimizations | Batching, KV cache, chunked prefill, prefix caching, quantization, speculative decoding, parallelism |
-| Constraints | Available GPU memory, latency targets, throughput and quality requirements |
+-   AI application developers who want simpler model serving
+-   ML engineers responsible for inference performance
+-   Startups looking to manage inference cost without building a large
+    optimization team
+-   Platform and infrastructure teams operating model-serving systems
+-   Teams that want to benchmark and evaluate optimization strategies
+    systematically
 
-Start with a small set of controlled experiments. Record the model, hardware, software versions, exact configuration, workload, and benchmark methodology.
+## Get involved
 
-### Metrics
+InferGo is being shaped around real engineering problems. Feedback from
+developers and teams working with production inference systems is
+especially valuable.
 
-- Time to first token (TTFT)
-- Time per output token (TPOT) / inter-token latency (ITL)
-- P50/P95/P99 latency
-- Output tokens/sec and requests/sec
-- GPU memory and utilization
-- Quality impact where relevant
+If you are working on model serving, inference infrastructure, or AI
+applications, I'd like to hear:
 
-Evaluate trade-offs, not throughput alone. A faster configuration is not useful if it violates latency or quality requirements.
+-   Which part of inference optimization consumes the most engineering
+    time?
+-   What are your biggest constraints: latency, throughput, GPU memory,
+    cost, or output quality?
+-   Which runtimes, models, and hardware environments do you use?
+-   What would make an optimization layer genuinely useful in your
+    workflow?
 
-### Shareable outputs
+Open an issue or start a discussion in this repository. You can also get
+in touch to discuss an integration or an early use case.
 
-**1. Technical articles**
+## The idea in one sentence
 
-Publish data-backed observations about vLLM performance under different workloads. Explain the setup, results, trade-offs, recommendations, and limitations.
+**InferGo hides inference optimization complexity so developers can
+focus on building AI applications.**
 
-**2. Actionable optimization cheat sheet**
+------------------------------------------------------------------------
 
-A concise reference mapping common symptoms to investigations and possible experiments.
-
-| Symptom | Investigate |
-|---|---|
-| High TTFT | Prompt length, prefill, queueing |
-| High ITL / TPOT | Decode cost, memory bandwidth, contention |
-| Frequent preemption | KV-cache and memory pressure |
-| Low throughput | Workload, batching, utilization |
-| Repeated prefixes | Prefix-cache hit rate |
-| Long prompts affect short requests | Chunked prefill |
-
-Treat these as diagnostic starting points; publish recommendations only when supported by measurements.
-
-**3. Reproducible benchmark repository**
-
-Publish experiment scripts, configurations, workload definitions, results, plots, environment details, and reproduction instructions.
-
-### Suggested first six weeks
-
-| Week | Focus |
-|---|---|
-| 1 | Benchmark setup and baseline |
-| 2 | Workload characterization |
-| 3 | Batching and KV-cache experiments |
-| 4 | Prefix caching and chunked prefill |
-| 5 | Quantization and speculative decoding |
-| 6 | Findings, articles, and cheat sheet v1 |
-
----
-
-## Phase 2 — Automation
-
-**Goal:** Automate the analysis and optimization decisions that proved useful during Phase 1.
-
-### Potential capabilities
-
-1. **Workload analyzer:** characterize request lengths, concurrency, traffic patterns, and prefix reuse.
-2. **Profiler:** collect vLLM, GPU, memory, and latency metrics.
-3. **Bottleneck analyzer:** identify likely compute, memory, scheduling, or communication constraints.
-4. **Configuration advisor:** recommend relevant vLLM settings to test.
-5. **Experiment runner:** benchmark candidate configurations against a baseline.
-6. **Results analyzer:** compare performance while enforcing latency, memory, and quality constraints.
-
-### Possible API
-
-```python
-from infergo import Profiler, Optimizer
-
-report = Profiler(backend="vllm").analyze(
-    model="MODEL_NAME",
-    workload="workload.json"
-)
-
-recommendations = Optimizer(report).recommend(
-    objectives=["latency", "throughput"]
-)
-
-results = recommendations.benchmark()
-results.compare_against_baseline()
-```
-
-This is an illustrative API; finalize it based on what the experiments demonstrate.
-
-### Longer-term differentiation
-
-Explore research-driven optimizations such as:
-
-- Layer-wise low-rank compression and adaptive rank allocation.
-- Sensitivity-aware mixed precision.
-- Workload-aware model compression.
-
-Validate actual end-to-end latency and quality; fewer parameters or FLOPs do not automatically mean faster inference.
-
----
-
-## Immediate next steps
-
-1. Set up the `infergo-lab` repository.
-2. Choose one representative model and establish a reproducible vLLM baseline.
-3. Test short, long-context, generation-heavy, mixed, and bursty workloads.
-4. Capture latency, throughput, memory, and utilization metrics.
-5. Start with batching and KV-cache experiments.
-6. Publish the first evidence-backed findings.
-
-## Guiding principles
-
-- Optimize for the user's existing hardware.
-- Make workload-specific recommendations, not universal claims.
-- Use reproducible experiments and measured results.
-- Keep vLLM as the execution engine; avoid rebuilding its capabilities.
-- Start with diagnosis and recommendations; automate progressively.
-
-**Experiments → Evidence → Articles + Cheat Sheet + Benchmarks → Automation → InferGo**
+*InferGo is an evolving project. Features and integrations described as
+goals or areas of exploration should not be interpreted as currently
+available functionality.*
