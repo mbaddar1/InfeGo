@@ -174,7 +174,7 @@ an RTX A5000 Laptop GPU). Larger setups come later.
 -   Include **quality checks** alongside any speed gain from
     quantization or speculative decoding.
 -   Publish **plots and short write-ups** for each experiment (see
-    `docs/`), e.g. "KV cache benchmarking, part 1".
+    [`docs/articles/`](docs/articles/README.md)).
 -   Show the **trade-off curves** (throughput vs. latency, memory vs.
     quality). They show the engineering judgment InfeGo is meant to
     automate.
@@ -226,13 +226,20 @@ time.
 
 | Phase | Goal | Output |
 |-------|------|--------|
-| **0. Foundations** | Understand architectures from an inference angle | Article series: Transformers, attention, autoregressive decoding, KV cache, MoE, SSMs (Mamba), and where each one hits its bottlenecks |
+| **0. Foundations** | Understand architectures from an inference angle | [Article series](docs/articles/README.md): Transformers, attention, autoregressive decoding, KV cache, MoE, SSMs (Mamba), and where each one hits its bottlenecks |
 | **1. Bench** | Benchmark engines and optimizations on your own hardware with one command | `infego bench`, reproducible reports, one write-up per experiment |
 | **2. Recommend** | Suggest the best configuration for a given model, hardware, and workload | `infego recommend` |
 | **3. Optimize** | Apply and auto-tune configurations, and fill the gaps found in phases 1–2 | `infego optimize` |
 | **4. Production** | More runtimes, observability, managed service | Integrations, hosted offering |
 
 Roadmap items are goals, not delivery commitments.
+
+## Articles
+
+Architectures explained from an inference-performance angle. See the
+[full series](docs/articles/README.md).
+
+1.  [Transformers: A Performance Perspective](docs/articles/01-transformers-a-performance-perspective.md)
 
 ## Who is InfeGo for?
 
