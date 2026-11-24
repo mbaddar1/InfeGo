@@ -58,6 +58,22 @@ The intended experience:
 The long-term objective is to make inference optimization an
 increasingly seamless part of developing and deploying AI applications.
 
+## Philosophy: understand first, add layers last
+
+> *"Sometimes the best engineering isn't adding another layer."*
+> [Mark Emerson](https://www.linkedin.com/posts/mark-emerson-60148312_softwareengineering-coding-cleancode-share-7530580291183091712-Qeg1/)
+
+Every tool built to remove complexity tends to grow new abstractions on
+top. InfeGo resists that:
+
+1.  **Understand** the architecture and where its bottlenecks really are.
+2.  **Measure** what existing runtimes already deliver when configured
+    well.
+3.  **Build** only where the evidence shows a real gap.
+
+Often the best optimization is the right setting in a runtime you
+already use, not a new layer.
+
 ## Design principles
 
 -   **Developer-first:** Keep the developer experience simple; expose
