@@ -224,6 +224,22 @@ an RTX A5000 Laptop GPU). Larger setups come later.
 | 5 | **Code completion** | Short prompts, short outputs, very latency sensitive | Per-token latency at batch size 1 | Speculative decoding (draft model, n-gram, EAGLE), CUDA graphs | ITL at batch 1, acceptance rate, speedup |
 | 6 | **Structured output / tool calling** | JSON schema constrained | Constrained-decoding overhead | Guided decoding backends (xgrammar, outlines) | Overhead vs. unconstrained decoding, validity rate |
 
+### Application workloads
+
+The traffic shapes above describe a single LLM. Real products chain
+several models, so InfeGo also benchmarks full pipelines end to end,
+each with a latency target and a quality metric:
+
+| Problem | Pipeline | Decides on |
+|---------|----------|------------|
+| **Semantic search** | Embeddings → vector search → reranker | Queries/s and p95 latency vs recall@10 |
+| **Voice AI understanding** | Streaming ASR → LLM → TTS | End-to-end turn latency (time to first audio) vs WER and intent accuracy |
+| **Structured extraction** | Document → LLM with constrained JSON output | Docs/s and cost per 1k docs vs JSON validity and field accuracy |
+| **Chat / RAG answer** | Multi-turn chat with retrieved context | TTFT, TPOT and goodput vs a small eval |
+
+Specs (models, datasets, traffic, SLOs) live in
+[`benchmark_repo/workloads/`](benchmark_repo/workloads/README.md).
+
 ### Suggested order
 
 1. **Baseline (workload 4 + workload 1):** run vLLM with default
