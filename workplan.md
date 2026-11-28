@@ -151,6 +151,35 @@ back to the repo and its `infego reproduce` command.
 
 ## Work items
 
+### Start here: read the inference-optimization roadmap (before week 0)
+
+- **Status:** to do
+- **Read:** [The Roadmap to Mastering LLM Inference Optimization](https://machinelearningmastery.com/the-roadmap-to-mastering-llm-inference-optimization/)
+  (Bala Priya C, Machine Learning Mastery, Sep 2026)
+- **Companion reads it recommends:** [Modular's LLM Inference Handbook](https://handbook.modular.com),
+  [NVIDIA: Mastering LLM techniques, inference optimization](https://developer.nvidia.com/blog/mastering-llm-techniques-inference-optimization/)
+
+**Goal:** get the map of the field before building, and check that
+Phase 1 covers it.
+
+**How its seven steps map to Phase 1:**
+
+| Roadmap step | Phase 1 coverage | Gap to note |
+|--------------|------------------|-------------|
+| 1. Prefill vs decode | Article 01 | — |
+| 2. KV cache, PagedAttention, prefix caching | Article 02 | Prefix caching: add a section to 02 or measure it in the chat / RAG workload |
+| 3. Static, dynamic and continuous batching | Article 03 | — |
+| 4. MQA / GQA, FlashAttention | Article 01 (GQA in the forward pass), article 05 (Flash-style kernel) | — |
+| 5. Quantization, 2:4 sparsity, distillation | Article 04 (quantization) | Sparsity and distillation not covered; Phase 2 candidates |
+| 6. Speculative decoding | Article 06 | — |
+| 7. Tensor / pipeline parallelism, prefill-decode disaggregation | Not covered (single-GPU focus) | Explain briefly in article 07 why it is out of scope on one GPU |
+
+**Tasks:**
+- [ ] Read the roadmap and both companion reads
+- [ ] Write a one-paragraph note per step: what it is, which article covers it, open questions
+- [ ] Decide where prefix caching goes (article 02 or the chat / RAG workload)
+- [ ] Add sparsity and distillation to the Phase 2 backlog if still relevant after reading
+
 ### 0. Setup: harness and package skeleton (week 0)
 
 - **Status:** planned
