@@ -1,17 +1,17 @@
 # InfeGo
 
-### Hide inference optimization complexity. Let developers focus on building.
+### The inference planner. Measured, not guessed.
 
-InfeGo is an intelligent inference optimization layer designed to make
-AI model serving simpler, faster, and more cost-efficient.
+InfeGo measures how models actually run on your hardware, learns from
+every measurement, and decides the best way to serve them: which
+engine, which quantization, which settings.
 
 Developers should not need to become inference infrastructure experts
-just to ship AI-powered applications. InfeGo aims to take care of the
-complexity behind inference optimization so teams can focus on building
-products.
+just to ship AI-powered applications, and they should not have to trust
+benchmark numbers from someone else's GPU either.
 
-> **You build AI applications. InfeGo takes care of inference
-> optimization.**
+> **You build AI applications. InfeGo finds the fastest, cheapest way to
+> serve them, and shows you the evidence.**
 
 ------------------------------------------------------------------------
 
@@ -39,24 +39,98 @@ hardware, quality requirements, and serving environment.
 
 ## The vision
 
-InfeGo aims to provide a smart layer between AI applications and
-inference infrastructure.
+### Measured, not guessed.
 
-Instead of requiring developers to manually investigate, select,
-configure, and maintain every optimization, InfeGo will help identify
-suitable strategies and make them easier to evaluate and apply.
+InfeGo is an **inference planner**. You give it a model, your hardware,
+and a performance target. InfeGo measures how the model actually runs,
+learns from every measurement, and decides the best way to serve it.
 
-The intended experience:
+``` text
+infego plan --model Llama-3.1-8B-Instruct --gpu "RTX A5000 16GB" \
+            --workload chat --slo "p95 TTFT < 300ms"
+```
 
-1.  **Connect** an existing model and inference setup.
-2.  **Understand** the workload and its performance requirements.
-3.  **Evaluate** relevant optimization opportunities.
-4.  **Apply** suitable optimizations through a consistent workflow.
-5.  **Measure** the impact on latency, throughput, resource usage, and
-    cost.
+> Illustrative only: this command is the target experience, not an
+> available feature yet.
 
-The long-term objective is to make inference optimization an
-increasingly seamless part of developing and deploying AI applications.
+### Why measurement is the product
+
+Advice about inference is cheap. Blog posts, docs, and AI assistants
+will all suggest a configuration. But that advice is usually:
+
+-   **Benchmarked on different hardware**, often data-center GPUs rather
+    than the card you have.
+-   **Out of date.** Inference engines ship significant performance
+    changes every few weeks.
+-   **Unverifiable.** A plausible number is not a measured one.
+
+InfeGo's answers are backed by real runs on real hardware, and every
+recommendation shows the measurements and trade-offs behind it.
+
+### How it works: a learning loop
+
+``` text
+   benchmark ──> structured results ──> performance model
+       ^                                       |
+       |                                       v
+   verify <──────── configuration <──── decide what to try
+```
+
+1.  **Benchmark:** run reproducible experiments across engines,
+    quantization formats, and serving settings, with pinned versions
+    and a fixed result schema.
+2.  **Learn:** a performance model predicts latency, throughput, and
+    memory for configurations, including ones not measured yet.
+3.  **Decide:** instead of brute-forcing thousands of combinations,
+    InfeGo picks the few most likely to meet the target and measures
+    them.
+4.  **Verify:** a recommendation is marked as *measured* or *predicted*,
+    so you always know how much to trust it.
+
+Every run makes the next recommendation better.
+
+### Engine-neutral
+
+InfeGo does not try to replace vLLM, SGLang, TensorRT-LLM, llama.cpp, or
+other runtimes. It sits above them and helps you choose and configure
+the right one for your case. Each new engine or optimization technique
+widens the search space InfeGo can explore.
+
+### Built for the hardware most people have
+
+Most published optimization work targets large GPU clusters. InfeGo
+starts with **single-GPU and small-team setups**: consumer and
+workstation cards with 16–48 GB of memory, where choosing the right
+configuration decides whether a model fits at all.
+
+### Community-powered data
+
+The long-term goal is an open, growing dataset of inference
+measurements across GPUs, engines, and workloads:
+
+-   Run `infego bench` and get a useful report on your own setup.
+-   Optionally share anonymized results. Sharing is **opt-in** and
+    includes only hardware, software versions, settings, workload
+    *shape* (for example prompt-length distributions), and metrics.
+    Prompts and outputs are never collected.
+-   Aggregated results are published openly, as a public reference for
+    the best measured configuration per model and GPU.
+
+### Where it is heading
+
+The intended progression follows the [roadmap](#roadmap):
+
+1.  **Bench:** trustworthy, reproducible measurements.
+2.  **Recommend:** a configuration for a given model, hardware, and
+    target, with the evidence behind it.
+3.  **Configure:** generate and validate the launch configuration for
+    the chosen runtime.
+4.  **Adapt:** later, keep a deployment near its optimum as traffic and
+    conditions change.
+
+InfeGo's measurements are also designed to be machine-readable, so AI
+agents and coding assistants can call InfeGo for grounded answers
+instead of guessing.
 
 ## Philosophy: understand first, add layers last
 
@@ -235,16 +309,97 @@ Interfaces, supported runtimes, and feature availability may change as
 the project evolves. Check the repository's releases and documentation
 for the current implementation status.
 
+## Work doctrine
+
+How InfeGo is built, right now: **learn by benchmarking, and write as
+you go.** Every experiment produces three things:
+
+1.  **Understanding:** why the numbers look the way they do.
+2.  **Data:** structured results added to
+    [`benchmark_repo/`](benchmark_repo/README.md).
+3.  **Writing:** an article or section in
+    [`docs/articles/`](docs/articles/README.md).
+
+### Rules
+
+-   **Measure before building.** Use existing tools (`vllm bench`,
+    GuideLLM, `llama-bench`, SGLang `bench_serving`) first. Build only
+    where they fall short.
+-   **Every run is saved as structured JSON** with the fixed result
+    schema: hardware, software versions, model, quantization, settings,
+    workload shape, metrics, and telemetry. Results that live only in a
+    notebook don't count.
+-   **Pin everything:** GPU, driver, CUDA, engine version, and model
+    revision.
+-   **Trustworthy numbers only:** warmup runs, multiple repetitions, and
+    reported variance. Report percentiles (p50/p95/p99), not averages.
+-   **Watch the hardware:** log clocks, temperature, and power during
+    runs. On a laptop GPU, thermal throttling can skew results by a lot.
+-   **Speed is never reported without quality** when a technique can
+    change model output (quantization, speculative decoding).
+-   **Optimize for goodput:** throughput while meeting a latency target
+    is the number decisions are based on.
+
+### What to measure
+
+| Metric | What it reflects |
+|--------|------------------|
+| TTFT (time to first token) | Prefill cost |
+| ITL / TPOT (time per output token) | Decode speed, memory-bandwidth bound |
+| Throughput (tokens/s) | Overall serving capacity |
+| p50 / p95 / p99 latency | What users actually experience |
+| Goodput at an SLO | Useful throughput within a latency target |
+| GPU memory, utilization, power, temperature | Hardware limits and measurement validity |
+
+### First configuration space
+
+-   **Models:** Qwen2.5-0.5B (smoke test), Llama-3.2-3B / Qwen2.5-3B
+    (main), 7–8B quantized (stretch).
+-   **Engines:** vLLM and llama.cpp first, SGLang later.
+-   **Quantization:** FP16, FP8, AWQ / GPTQ INT4, GGUF Q4 / Q8.
+-   **Settings:** concurrency, max batched tokens, context length,
+    prefix caching on/off.
+
+### Build to understand
+
+To understand what production engines do, InfeGo builds each technique
+once by hand in [`nanoinfer/`](nanoinfer/README.md), a small
+from-scratch inference engine, and then measures the real engines
+against it. `nanoinfer` is a learning tool and a correctness baseline,
+not a new runtime: the "measure before building" rule applies to
+InfeGo the product.
+
+### Rhythm
+
+Phase 1 (Dec 2026 – early Mar 2027) ships one article about every two
+weeks. Each article builds a technique from scratch, measures it, and
+checks it against a production engine. The week-by-week schedule is in
+the [workplan](workplan.md).
+
+| Weeks | Article | Built from scratch |
+|-------|---------|--------------------|
+| 0 | (setup) | Benchmark harness and result schema |
+| 1–2 | Transformers: a performance perspective | Llama/Qwen forward pass, loader, sampler, roofline counter |
+| 3–4 | KV cache → PagedAttention | Contiguous and paged KV cache |
+| 5–6 | Continuous batching | Iteration-level scheduler |
+| 7 | (buffer + `v0.1` launch) | — |
+| 8–9 | Quantization | int8 / int4, AWQ-style scaling |
+| 10–11 | Attention kernels in Triton | Fused and Flash-style kernels |
+| 12 | Speculative decoding | Draft/verify loop |
+| 13 | Engine shoot-out on one 16 GB GPU | (compares `nanoinfer`, HF, vLLM, SGLang, llama.cpp) |
+
+The plan is a guide, not a commitment. It changes when the measurements
+say something unexpected.
+
 ## Roadmap
 
-Built in short loops: **learn → benchmark → write**, one bottleneck at a
-time.
+Built in short loops: **learn → build → measure → write**, one
+bottleneck at a time.
 
 | Phase | Goal | Output |
 |-------|------|--------|
-| **0. Foundations** | Understand architectures from an inference angle | [Article series](docs/articles/README.md): Transformers, attention, autoregressive decoding, KV cache, MoE, SSMs (Mamba), and where each one hits its bottlenecks |
-| **1. Bench** | Benchmark engines and optimizations on your own hardware with one command | `infego bench`, reproducible reports, one write-up per experiment |
-| **2. Recommend** | Suggest the best configuration for a given model, hardware, and workload | `infego recommend` |
+| **1. Foundations + Bench** (Dec 2026 – Mar 2027) | Understand each core inference technique by building it from scratch, and measure real engines on your own hardware with one command | [Article series](docs/articles/README.md), [`nanoinfer`](nanoinfer/README.md), `infego bench` harness and `infego reproduce`; see the [workplan](workplan.md) |
+| **2. Recommend** | Suggest the best configuration for a given model, hardware, and workload | `infego recommend`; MoE and SSM articles |
 | **3. Optimize** | Apply and auto-tune configurations, and fill the gaps found in phases 1–2 | `infego optimize` |
 | **4. Production** | More runtimes, observability, managed service | Integrations, hosted offering |
 
@@ -252,10 +407,17 @@ Roadmap items are goals, not delivery commitments.
 
 ## Articles
 
-Architectures explained from an inference-performance angle. See the
+Each article builds one inference technique from scratch, measures it
+on a 16 GB GPU, and checks it against a production engine. See the
 [full series](docs/articles/README.md).
 
 1.  [Transformers: A Performance Perspective](docs/articles/01-transformers-a-performance-perspective.md)
+2.  [The KV Cache: From Contiguous to PagedAttention](docs/articles/02-kv-cache-to-paged-attention.md)
+3.  [Continuous Batching: A Scheduler from Scratch](docs/articles/03-continuous-batching-from-scratch.md)
+4.  [Quantization from Scratch: int8, int4 and AWQ-style Scaling](docs/articles/04-quantization-from-scratch.md)
+5.  [Attention Kernels in Triton: Naive, Fused, Flash-style](docs/articles/05-attention-kernels-in-triton.md)
+6.  [Speculative Decoding from Scratch](docs/articles/06-speculative-decoding-from-scratch.md)
+7.  [Engine Shoot-out on One 16 GB GPU](docs/articles/07-engine-shoot-out-on-one-16gb-gpu.md)
 
 ## Who is InfeGo for?
 
@@ -291,8 +453,8 @@ in touch to discuss an integration or an early use case.
 
 ## The idea in one sentence
 
-**InfeGo hides inference optimization complexity so developers can
-focus on building AI applications.**
+**InfeGo measures, learns, and decides the best way to serve your model
+on your hardware, so you can focus on building AI applications.**
 
 ------------------------------------------------------------------------
 
